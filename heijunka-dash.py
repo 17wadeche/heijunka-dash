@@ -1,4 +1,4 @@
-# app.py
+# heijunka-dash.py
 import os
 from pathlib import Path
 import pandas as pd
@@ -8,7 +8,7 @@ import altair as alt
 DEFAULT_DATA_PATH = Path(r"C:\Users\wadec8\OneDrive - Medtronic PLC\metrics_aggregate.xlsx")
 st.set_page_config(page_title="Heijunka Metrics", layout="wide")
 @st.cache_data(show_spinner=False)
-def load_data(data_path: str | Path):
+def load_data_with_key(data_path: str, key: float):
     p = Path(data_path)
     if not p.exists():
         return pd.DataFrame()
@@ -32,13 +32,17 @@ def load_data(data_path: str | Path):
         df["Capacity Utilization"] = (df["Completed Hours"] / df["Total Available Hours"]).replace([np.inf, -np.inf], np.nan)
     return df
 data_path = os.environ.get("HEIJUNKA_DATA_PATH", str(DEFAULT_DATA_PATH))
-df = load_data(data_path)
+p = Path(data_path)
+mtime_key = p.stat().st_mtime if p.exists() else 0
+df = load_data_with_key(str(p), mtime_key)
+if p.exists():
+    st.caption(f"Last updated: {pd.to_datetime(mtime_key, unit='s')}")
 st.title("Heijunka Metrics Dashboard")
 if df.empty:
     st.warning("No data found yet. Make sure metrics_aggregate.xlsx exists and has the 'All Metrics' sheet.")
     st.stop()
 teams = sorted([t for t in df["team"].dropna().unique()])
-default_teams = teams  # show all by default
+default_teams = teams
 col1, col2, col3 = st.columns([2,2,6], gap="large")
 with col1:
     selected_teams = st.multiselect("Teams", teams, default=default_teams)
@@ -137,7 +141,7 @@ eff = f.assign(Efficiency=lambda d: (d["Actual Output"] / d["Target Output"]))
 eff = eff.replace([np.inf, -np.inf], np.nan).dropna(subset=["Efficiency"])
 color_scale = alt.Scale(
     domain=[0, 1],
-    range=["#d62728", "#2ca02c"]  # red to green
+    range=["#d62728", "#2ca02c"]
 )
 eff_bar = (
     alt.Chart(eff)
