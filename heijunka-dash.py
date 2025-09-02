@@ -103,13 +103,52 @@ kpi(kpi_cols2[0], "Target UPLH", (tot_target/tot_tahl if tot_tahl else np.nan), 
 kpi(kpi_cols2[1], "Actual UPLH", (tot_actual/tot_chl if tot_chl else np.nan), "{:.2f}")
 kpi(kpi_cols2[2], "Capacity Utilization", (tot_chl/tot_tahl if tot_tahl else np.nan), "{:.0%}")
 st.markdown("---")
-left, right = st.columns(2)
+left, mid, right = st.columns(3)
 base = alt.Chart(f).transform_calculate(
     week="toDate(datum.period_date)"
 ).encode(
     x=alt.X("period_date:T", title="Week")
 )
 with left:
+    st.subheader("Hours Trend")
+    have_hours = {"Total Available Hours", "Completed Hours"}.issubset(f.columns)
+    if have_hours:
+        hrs_long = (
+            f.melt(
+                id_vars=["team", "period_date"],
+                value_vars=["Total Available Hours", "Completed Hours"],
+                var_name="Metric",
+                value_name="Value"
+            )
+            .dropna(subset=["Value"])
+            .assign(
+                Metric=lambda d: d["Metric"].replace({
+                    "Total Available Hours": "Target Hours",
+                    "Completed Hours": "Actual Hours"
+                })
+            )
+        )
+        hrs_chart = (
+            alt.Chart(hrs_long)
+            .mark_line(point=True)
+            .encode(
+                x=alt.X("period_date:T", title="Week"),
+                y=alt.Y("Value:Q", title="Hours"),
+                color=alt.Color("Metric:N", title="Series"),
+                detail="team:N",
+                tooltip=[
+                    "team:N",
+                    "period_date:T",
+                    "Metric:N",
+                    alt.Tooltip("Value:Q", format=",.0f")
+                ]
+            )
+            .properties(height=280)
+        )
+        st.altair_chart(hrs_chart, use_container_width=True)
+    else:
+        st.info("Hours columns not found (need 'Total Available Hours' and 'Completed Hours').")
+with mid:
     st.subheader("Output Trend")
     out_long = f.melt(
         id_vars=["team", "period_date"],
