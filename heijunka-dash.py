@@ -249,7 +249,7 @@ else:
 
 highlight = alt.condition(cond, alt.value(1), alt.value(0.2))
 
-    out_chart = (
+out_chart = (
         alt.Chart(out_long)
         .mark_line(point=True)
         .encode(
@@ -264,19 +264,19 @@ highlight = alt.condition(cond, alt.value(1), alt.value(0.2))
         .properties(height=300)
     )
 
-    cl.subheader("Output Trend")
-    cl.altair_chart(out_chart, use_container_width=True)
+cl.subheader("Output Trend")
+cl.altair_chart(out_chart, use_container_width=True)
 
     # UPLH Trend
-    uplh_vars = [v for v in ["Actual UPLH", "Target UPLH"] if v in f.columns]
-    uplh_long = f.melt(
+uplh_vars = [v for v in ["Actual UPLH", "Target UPLH"] if v in f.columns]
+uplh_long = f.melt(
         id_vars=["team", "period_date"],
         value_vars=uplh_vars,
         var_name="Metric",
         value_name="Value",
     ).dropna(subset=["Value"]) 
 
-    uplh_chart = (
+uplh_chart = (
         alt.Chart(uplh_long)
         .mark_line(point=True)
         .encode(
@@ -291,13 +291,13 @@ highlight = alt.condition(cond, alt.value(1), alt.value(0.2))
         .properties(height=300)
     )
 
-    cr.subheader("UPLH Trend")
-    cr.altair_chart(uplh_chart, use_container_width=True)
+cr.subheader("UPLH Trend")
+cr.altair_chart(uplh_chart, use_container_width=True)
 
-    st.markdown("---")
+st.markdown("---")
 
     # Heatmap of efficiency by team/week (small-multiples feel)
-    if {"Efficiency vs Target", "team"}.issubset(f.columns):
+if {"Efficiency vs Target", "team"}.issubset(f.columns):
         st.subheader("Efficiency vs Target — Heatmap")
         heat = (
             alt.Chart(f.dropna(subset=["Efficiency vs Target"]))
