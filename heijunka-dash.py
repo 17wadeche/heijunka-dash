@@ -7,6 +7,15 @@ import streamlit as st
 import altair as alt
 DEFAULT_DATA_PATH = Path(r"C:\Users\wadec8\OneDrive - Medtronic PLC\metrics_aggregate.xlsx")
 st.set_page_config(page_title="Heijunka Metrics", layout="wide")
+from streamlit.runtime.scriptrunner import get_script_run_ctx
+st_autorefresh = st.experimental_rerun
+st.runtime.legacy_caching.caching._set_cache_policy = lambda *a, **k: None
+st.experimental_set_query_params()
+_ = st.experimental_data_editor  
+st.runtime.scriptrunner.add_script_run_ctx = lambda *a, **k: None  
+st_autorefresh = st.autorefresh if hasattr(st, "autorefresh") else None
+if st_autorefresh:
+    st_autorefresh(interval=720 * 60 * 1000, key="auto-refresh")
 @st.cache_data(show_spinner=False)
 def load_data_with_key(data_path: str, key: float):
     p = Path(data_path)
