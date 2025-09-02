@@ -6,18 +6,29 @@ import numpy as np
 import streamlit as st
 import altair as alt
 DEFAULT_DATA_PATH = Path(r"C:\Users\wadec8\OneDrive - Medtronic PLC\metrics_aggregate.xlsx")
+# If deployed on Streamlit Cloud, put this in Secrets:
+# HEIJUNKA_DATA_URL = "https://raw.githubusercontent.com/<you>/<repo>/<branch>/metrics_aggregate.csv"
+DATA_URL = st.secrets.get("HEIJUNKA_DATA_URL", os.environ.get("HEIJUNKA_DATA_URL"))
 st.set_page_config(page_title="Heijunka Metrics", layout="wide")
-from streamlit.runtime.scriptrunner import get_script_run_ctx
-st_autorefresh = st.experimental_rerun
-st.runtime.legacy_caching.caching._set_cache_policy = lambda *a, **k: None
-st.experimental_set_query_params()
-_ = st.experimental_data_editor  
-st.runtime.scriptrunner.add_script_run_ctx = lambda *a, **k: None  
-st_autorefresh = st.autorefresh if hasattr(st, "autorefresh") else None
-if st_autorefresh:
-    st_autorefresh(interval=720 * 60 * 1000, key="auto-refresh")
-@st.cache_data(show_spinner=False)
-def load_data_with_key(data_path: str, key: float):
+if hasattr(st, "autorefresh"):
+    st.autorefresh(interval=720 * 60 * 1000, key="auto-refresh")
+refresh_now = st.button("Refresh now", help="Clear cache and reload data")
+if refresh_now:
+    try:
+        st.cache_data.clear()
+    except Exception:
+        pass
+    st.rerun()
+@st.cache_data(show_spinner=False, ttl=15 * 60)
+def load_data(data_path: str | None, data_url: str | None):
+    if data_url:
+        if data_url.lower().endswith(".json"):
+            df = pd.read_json(data_url)
+        else:
+            df = pd.read_csv(data_url)
+        return _postprocess(df)
+    if not data_path:
+        return pd.DataFrame()
     p = Path(data_path)
     if not p.exists():
         return pd.DataFrame()
@@ -29,6 +40,10 @@ def load_data_with_key(data_path: str, key: float):
         df = pd.read_json(p)
     else:
         return pd.DataFrame()
+    return _postprocess(df)
+def _postprocess(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
     if "period_date" in df.columns:
         df["period_date"] = pd.to_datetime(df["period_date"], errors="coerce").dt.normalize()
     for col in ["Total Available Hours", "Completed Hours", "Target Output", "Actual Output",
@@ -40,11 +55,25 @@ def load_data_with_key(data_path: str, key: float):
     if {"Completed Hours", "Total Available Hours"}.issubset(df.columns):
         df["Capacity Utilization"] = (df["Completed Hours"] / df["Total Available Hours"]).replace([np.inf, -np.inf], np.nan)
     return df
-data_path = os.environ.get("HEIJUNKA_DATA_PATH", str(DEFAULT_DATA_PATH))
-p = Path(data_path)
-mtime_key = p.stat().st_mtime if p.exists() else 0
-df = load_data_with_key(str(p), mtime_key)
-if p.exists():
+data_path = None if DATA_URL else str(DEFAULT_DATA_PATH)
+mtime_key = 0
+if data_path:
+    p = Path(data_path)
+    mtime_key = p.stat().st_mtime if p.exists() else 0
+df = load_data(data_path, DATA_URL)
+if DATA_URL:
+    st.caption("Loaded from URL (Streamlit Cloud).")
+elif data_path and mtime_key:
+    st.caption(f"Last updated: {pd.to_datetime(mtime_key, unit='s')}")
+data_path = None if DATA_URL else str(DEFAULT_DATA_PATH)
+mtime_key = 0
+if data_path:
+    p = Path(data_path)
+    mtime_key = p.stat().st_mtime if p.exists() else 0
+df = load_data(data_path, DATA_URL)
+if DATA_URL:
+    st.caption("Loaded from URL (Streamlit Cloud).")
+elif data_path and mtime_key:
     st.caption(f"Last updated: {pd.to_datetime(mtime_key, unit='s')}")
 st.title("Heijunka Metrics Dashboard")
 if df.empty:
