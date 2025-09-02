@@ -65,16 +65,6 @@ if DATA_URL:
     st.caption("Loaded from URL (Streamlit Cloud).")
 elif data_path and mtime_key:
     st.caption(f"Last updated: {pd.to_datetime(mtime_key, unit='s')}")
-data_path = None if DATA_URL else str(DEFAULT_DATA_PATH)
-mtime_key = 0
-if data_path:
-    p = Path(data_path)
-    mtime_key = p.stat().st_mtime if p.exists() else 0
-df = load_data(data_path, DATA_URL)
-if DATA_URL:
-    st.caption("Loaded from URL (Streamlit Cloud).")
-elif data_path and mtime_key:
-    st.caption(f"Last updated: {pd.to_datetime(mtime_key, unit='s')}")
 st.title("Heijunka Metrics Dashboard")
 if df.empty:
     st.warning("No data found yet. Make sure metrics_aggregate.xlsx exists and has the 'All Metrics' sheet.")
