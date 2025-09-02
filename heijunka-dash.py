@@ -111,9 +111,8 @@ base = alt.Chart(f).transform_calculate(
 )
 teams_in_view = sorted([t for t in f["team"].dropna().unique()])
 multi_team = len(teams_in_view) > 1
-dash_range = [[1,0], [6,3], [2,2], [4,2], [1,3]]  # solid, long, even, long-short, dot
-dash_scale = alt.Scale(domain=teams_in_view, range=[dash_range[i % len(dash_range)] for i in range(len(teams_in_view))])
 team_sel = alt.selection_point(fields=["team"], bind="legend")
+
 with left:
     st.subheader("Hours Trend")
     have_hours = {"Total Available Hours", "Completed Hours"}.issubset(f.columns)
@@ -142,7 +141,6 @@ with left:
         )
         line = base.mark_line(point=False).encode(
             detail="team:N",
-            strokeDash=alt.StrokeDash("team:N", scale=dash_scale) if multi_team else alt.value([1,0]),
             opacity=alt.condition(team_sel, alt.value(1.0), alt.value(0.25)) if multi_team else alt.value(1.0)
         )
         pts = base.mark_point().encode(
@@ -153,6 +151,7 @@ with left:
         st.altair_chart((line + pts).properties(height=280).add_params(team_sel), use_container_width=True)
     else:
         st.info("Hours columns not found (need 'Total Available Hours' and 'Completed Hours').")
+
 with mid:
     st.subheader("Output Trend")
     out_long = (
@@ -170,7 +169,6 @@ with mid:
     )
     line = base.mark_line().encode(
         detail="team:N",
-        strokeDash=alt.StrokeDash("team:N", scale=dash_scale) if multi_team else alt.value([1,0]),
         opacity=alt.condition(team_sel, alt.value(1.0), alt.value(0.25)) if multi_team else alt.value(1.0)
     )
     pts = base.mark_point().encode(
@@ -198,7 +196,6 @@ with right:
     )
     line = base.mark_line().encode(
         detail="team:N",
-        strokeDash=alt.StrokeDash("team:N", scale=dash_scale) if multi_team else alt.value([1,0]),
         opacity=alt.condition(team_sel, alt.value(1.0), alt.value(0.25)) if multi_team else alt.value(1.0)
     )
     pts = base.mark_point().encode(
