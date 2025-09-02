@@ -109,6 +109,11 @@ base = alt.Chart(f).transform_calculate(
 ).encode(
     x=alt.X("period_date:T", title="Week")
 )
+teams_in_view = sorted([t for t in f["team"].dropna().unique()])
+multi_team = len(teams_in_view) > 1
+dash_range = [[1,0], [6,3], [2,2], [4,2], [1,3]]  # solid, long, even, long-short, dot
+dash_scale = alt.Scale(domain=teams_in_view, range=[dash_range[i % len(dash_range)] for i in range(len(teams_in_view))])
+team_sel = alt.selection_point(fields=["team"], bind="legend")
 with left:
     st.subheader("Hours Trend")
     have_hours = {"Total Available Hours", "Completed Hours"}.issubset(f.columns)
@@ -121,33 +126,31 @@ with left:
                 value_name="Value"
             )
             .dropna(subset=["Value"])
-            .assign(
-                Metric=lambda d: d["Metric"].replace({
-                    "Total Available Hours": "Target Hours",
-                    "Completed Hours": "Actual Hours"
-                })
-            )
+            .assign(Metric=lambda d: d["Metric"].replace({
+                "Total Available Hours": "Target Hours",
+                "Completed Hours": "Actual Hours"
+            }))
         )
-        multi_team = hrs_long["team"].nunique() > 1
-        hrs_chart = (
-            alt.Chart(hrs_long)
-            .mark_line(point=True)
-            .encode(
-                x=alt.X("period_date:T", title="Week"),
-                y=alt.Y("Value:Q", title="Hours"),
-                color=alt.Color("Metric:N", title="Series"),
-                detail="team:N",
-                strokeDash=alt.StrokeDash("team:N", title="Team pattern") if multi_team else alt.value([1,0]),
-                tooltip=[
-                    "team:N",
-                    "period_date:T",
-                    "Metric:N",
-                    alt.Tooltip("Value:Q", format=",.0f")
-                ]
-            )
-            .properties(height=280)
+        base = alt.Chart(hrs_long).encode(
+            x=alt.X("period_date:T", title="Week"),
+            y=alt.Y("Value:Q", title="Hours"),
+            color=alt.Color("Metric:N", title="Series"),
+            tooltip=[
+                "team:N", "period_date:T", "Metric:N",
+                alt.Tooltip("Value:Q", format=",.0f")
+            ]
         )
-        st.altair_chart(hrs_chart, use_container_width=True)
+        line = base.mark_line(point=False).encode(
+            detail="team:N",
+            strokeDash=alt.StrokeDash("team:N", scale=dash_scale) if multi_team else alt.value([1,0]),
+            opacity=alt.condition(team_sel, alt.value(1.0), alt.value(0.25)) if multi_team else alt.value(1.0)
+        )
+        pts = base.mark_point().encode(
+            shape=alt.Shape("team:N", title="Team") if multi_team else alt.value("circle"),
+            size=alt.value(45),
+            opacity=alt.condition(team_sel, alt.value(1.0), alt.value(0.25)) if multi_team else alt.value(1.0)
+        )
+        st.altair_chart((line + pts).properties(height=280).add_params(team_sel), use_container_width=True)
     else:
         st.info("Hours columns not found (need 'Total Available Hours' and 'Completed Hours').")
 with mid:
@@ -156,31 +159,26 @@ with mid:
         f.melt(
             id_vars=["team", "period_date"],
             value_vars=["Target Output", "Actual Output"],
-            var_name="Metric",
-            value_name="Value"
-        )
-        .dropna(subset=["Value"])
+            var_name="Metric", value_name="Value"
+        ).dropna(subset=["Value"])
     )
-    multi_team = out_long["team"].nunique() > 1
-    out_chart = (
-        alt.Chart(out_long)
-        .mark_line(point=True)
-        .encode(
-            x=alt.X("period_date:T", title="Week"),
-            y=alt.Y("Value:Q", title="Output"),
-            color=alt.Color("Metric:N", title="Series"),
-            detail="team:N",
-            strokeDash=alt.StrokeDash("team:N", title="Team pattern") if multi_team else alt.value([1,0]),
-            tooltip=[
-                "team:N",
-                "period_date:T",
-                "Metric:N",
-                alt.Tooltip("Value:Q", format=",.0f")
-            ]
-        )
-        .properties(height=280)
+    base = alt.Chart(out_long).encode(
+        x=alt.X("period_date:T", title="Week"),
+        y=alt.Y("Value:Q", title="Output"),
+        color=alt.Color("Metric:N", title="Series"),
+        tooltip=["team:N", "period_date:T", "Metric:N", alt.Tooltip("Value:Q", format=",.0f")]
     )
-    st.altair_chart(out_chart, use_container_width=True)
+    line = base.mark_line().encode(
+        detail="team:N",
+        strokeDash=alt.StrokeDash("team:N", scale=dash_scale) if multi_team else alt.value([1,0]),
+        opacity=alt.condition(team_sel, alt.value(1.0), alt.value(0.25)) if multi_team else alt.value(1.0)
+    )
+    pts = base.mark_point().encode(
+        shape=alt.Shape("team:N", title="Team") if multi_team else alt.value("circle"),
+        size=alt.value(45),
+        opacity=alt.condition(team_sel, alt.value(1.0), alt.value(0.25)) if multi_team else alt.value(1.0)
+    )
+    st.altair_chart((line + pts).properties(height=280).add_params(team_sel), use_container_width=True)
 with right:
     st.subheader("UPLH Trend")
     have_target_uplh = "Target UPLH" in f.columns
@@ -189,31 +187,26 @@ with right:
         f.melt(
             id_vars=["team", "period_date"],
             value_vars=uplh_vars,
-            var_name="Metric",
-            value_name="Value"
-        )
-        .dropna(subset=["Value"])
+            var_name="Metric", value_name="Value"
+        ).dropna(subset=["Value"])
     )
-    multi_team = uplh_long["team"].nunique() > 1
-    uplh_chart = (
-        alt.Chart(uplh_long)
-        .mark_line(point=True)
-        .encode(
-            x=alt.X("period_date:T", title="Week"),
-            y=alt.Y("Value:Q", title="UPLH"),
-            color=alt.Color("Metric:N", title="Series"),
-            detail="team:N",
-            strokeDash=alt.StrokeDash("team:N", title="Team pattern") if multi_team else alt.value([1,0]),
-            tooltip=[
-                "team:N",
-                "period_date:T",
-                "Metric:N",
-                alt.Tooltip("Value:Q", format=",.2f")
-            ]
-        )
-        .properties(height=280)
+    base = alt.Chart(uplh_long).encode(
+        x=alt.X("period_date:T", title="Week"),
+        y=alt.Y("Value:Q", title="UPLH"),
+        color=alt.Color("Metric:N", title="Series"),
+        tooltip=["team:N", "period_date:T", "Metric:N", alt.Tooltip("Value:Q", format=",.2f")]
     )
-    st.altair_chart(uplh_chart, use_container_width=True)
+    line = base.mark_line().encode(
+        detail="team:N",
+        strokeDash=alt.StrokeDash("team:N", scale=dash_scale) if multi_team else alt.value([1,0]),
+        opacity=alt.condition(team_sel, alt.value(1.0), alt.value(0.25)) if multi_team else alt.value(1.0)
+    )
+    pts = base.mark_point().encode(
+        shape=alt.Shape("team:N", title="Team") if multi_team else alt.value("circle"),
+        size=alt.value(45),
+        opacity=alt.condition(team_sel, alt.value(1.0), alt.value(0.25)) if multi_team else alt.value(1.0)
+    )
+    st.altair_chart((line + pts).properties(height=280).add_params(team_sel), use_container_width=True)
 st.subheader("Efficiency vs Target (Actual / Target)")
 eff = f.assign(Efficiency=lambda d: (d["Actual Output"] / d["Target Output"]))
 eff = eff.replace([np.inf, -np.inf], np.nan).dropna(subset=["Efficiency"])
