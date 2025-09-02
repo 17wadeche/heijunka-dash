@@ -1,6 +1,6 @@
 # C:\heijunka-data\push_metrics.ps1
 $ErrorActionPreference = "Stop"
-$repoDir = "C:\heijunka-data"
+$repoDir = "C:\heijunka"
 $srcCsv  = "C:\Users\wadec8\OneDrive - Medtronic PLC\metrics_aggregate.csv"
 $dstCsv  = Join-Path $repoDir "metrics_aggregate.csv"
 New-Item -ItemType Directory -Path $repoDir -Force | Out-Null
