@@ -6,19 +6,10 @@ import numpy as np
 import streamlit as st
 import altair as alt
 DEFAULT_DATA_PATH = Path(r"C:\Users\wadec8\OneDrive - Medtronic PLC\metrics_aggregate.xlsx")
-# If deployed on Streamlit Cloud, put this in Secrets:
-# HEIJUNKA_DATA_URL = "https://raw.githubusercontent.com/<you>/<repo>/<branch>/metrics_aggregate.csv"
 DATA_URL = st.secrets.get("HEIJUNKA_DATA_URL", os.environ.get("HEIJUNKA_DATA_URL"))
 st.set_page_config(page_title="Heijunka Metrics", layout="wide")
 if hasattr(st, "autorefresh"):
     st.autorefresh(interval=720 * 60 * 1000, key="auto-refresh")
-refresh_now = st.button("Refresh now", help="Clear cache and reload data")
-if refresh_now:
-    try:
-        st.cache_data.clear()
-    except Exception:
-        pass
-    st.rerun()
 @st.cache_data(show_spinner=False, ttl=15 * 60)
 def load_data(data_path: str | None, data_url: str | None):
     if data_url:
@@ -61,10 +52,6 @@ if data_path:
     p = Path(data_path)
     mtime_key = p.stat().st_mtime if p.exists() else 0
 df = load_data(data_path, DATA_URL)
-if DATA_URL:
-    st.caption("Loaded from URL (Streamlit Cloud).")
-elif data_path and mtime_key:
-    st.caption(f"Last updated: {pd.to_datetime(mtime_key, unit='s')}")
 st.title("Heijunka Metrics Dashboard")
 if df.empty:
     st.warning("No data found yet. Make sure metrics_aggregate.xlsx exists and has the 'All Metrics' sheet.")
