@@ -1,5 +1,5 @@
 team	period_date	source_file	Total Available Hours	Completed Hours	Target Output	Actual Output	fallback_used	Target UPLH	Actual UPLH	Unnamed: 11	error
-PSS	6/3/2024	C:\Users\wadec8\Medtronic PLC\PSS Sharepoint - Documents\PSS_Heijunka.xlsm	227	297.5	1020	1636		4.49	5.5		
+PSS	6/3/2024	C:\Users\wadec8\Medtronic PLC\PSS Sharepoint - Documents\PSS_Heijunka.xlsm	227	297.5	1020	1636  4.49	5.5		
 PSS	6/10/2024	C:\Users\wadec8\Medtronic PLC\PSS Sharepoint - Documents\PSS_Heijunka.xlsm	194	237.5	916	1547		4.72	6.51		
 PSS	6/17/2024	C:\Users\wadec8\Medtronic PLC\PSS Sharepoint - Documents\PSS_Heijunka.xlsm	270	330	1220	1349		4.52	4.09		
 PSS	6/24/2024	C:\Users\wadec8\Medtronic PLC\PSS Sharepoint - Documents\PSS_Heijunka.xlsm	264	294.5	1196	1552		4.53	5.27		
@@ -158,4 +158,5 @@ TCT		C:\Users\wadec8\Medtronic PLC\TCT CQXM - Weekly Heijunka Archived\TCT Heiju
 TCT		C:\Users\wadec8\Medtronic PLC\TCT CQXM - Weekly Heijunka Archived\TCT Heijunka Week of May 19 2025.xlsb	223	115.6666667	808.1166667	788		3.62	6.81		
 TCT		C:\Users\wadec8\Medtronic PLC\TCT CQXM - Weekly Heijunka Archived\TCT Heijunka Week of May 26 2025.xlsb	177.5	80.33333333	746.25	702		4.2	8.74		
 TCT		C:\Users\wadec8\Medtronic PLC\TCT CQXM - Weekly Heijunka Archived\TCT Heijunka Week of May 5 2025.xlsb	225	120.75	806.5833333	799		3.58	6.62		
+
 
