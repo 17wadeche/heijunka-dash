@@ -9,7 +9,7 @@ DEFAULT_DATA_PATH = Path(r"C:\Users\wadec8\OneDrive - Medtronic PLC\metrics_aggr
 DATA_URL = st.secrets.get("HEIJUNKA_DATA_URL", os.environ.get("HEIJUNKA_DATA_URL"))
 st.set_page_config(page_title="Heijunka Metrics", layout="wide")
 if hasattr(st, "autorefresh"):
-    st.autorefresh(interval=720 * 60 * 1000, key="auto-refresh")
+    st.autorefresh(interval=60 * 60 * 1000, key="auto-refresh")
 @st.cache_data(show_spinner=False, ttl=15 * 60)
 def load_data(data_path: str | None, data_url: str | None):
     if data_url:
@@ -112,7 +112,6 @@ base = alt.Chart(f).transform_calculate(
 teams_in_view = sorted([t for t in f["team"].dropna().unique()])
 multi_team = len(teams_in_view) > 1
 team_sel = alt.selection_point(fields=["team"], bind="legend")
-
 with left:
     st.subheader("Hours Trend")
     have_hours = {"Total Available Hours", "Completed Hours"}.issubset(f.columns)
